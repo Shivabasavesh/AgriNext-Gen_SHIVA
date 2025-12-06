@@ -8,6 +8,7 @@ import AdvisoriesList from '@/components/farmer/AdvisoriesList';
 import QuickActions from '@/components/farmer/QuickActions';
 import WeatherWidget from '@/components/farmer/WeatherWidget';
 import FarmlandsSummary from '@/components/farmer/FarmlandsSummary';
+import OnboardingTour from '@/components/farmer/OnboardingTour';
 import { useRealtimeSubscriptions } from '@/hooks/useRealtimeSubscriptions';
 
 const FarmerDashboard = () => {
@@ -17,6 +18,9 @@ const FarmerDashboard = () => {
   return (
     <DashboardLayout title="Dashboard">
       <div className="space-y-6">
+        {/* Onboarding Tour for New Farmers */}
+        <OnboardingTour />
+
         {/* Farmer Summary Header */}
         <FarmerSummaryCard />
 
