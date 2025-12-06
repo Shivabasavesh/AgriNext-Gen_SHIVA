@@ -9,11 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Search, LandPlot, MapPin, Layers, Edit, Trash2, TreeDeciduous } from 'lucide-react';
 import EditFarmlandDialog from '@/components/farmer/EditFarmlandDialog';
+import ConfirmDialog from '@/components/ui/confirm-dialog';
+import EmptyState from '@/components/farmer/EmptyState';
+import HelpTooltip from '@/components/farmer/HelpTooltip';
 
 const FarmlandsPage = () => {
   const { data: farmlands, isLoading } = useFarmlands();
@@ -25,6 +28,9 @@ const FarmlandsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [editingFarmland, setEditingFarmland] = useState<Farmland | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deletingFarmland, setDeletingFarmland] = useState<{ id: string; name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -57,7 +63,7 @@ const FarmlandsPage = () => {
 
       if (error) throw error;
 
-      toast({ title: 'Farmland added successfully' });
+      toast({ title: 'Success!', description: 'Farmland added successfully.' });
       setIsDialogOpen(false);
       setFormData({ name: '', area: '', area_unit: 'acres', soil_type: '', village: '', district: '' });
       queryClient.invalidateQueries({ queryKey: ['farmlands', user.id] });
@@ -66,20 +72,31 @@ const FarmlandsPage = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDeleteClick = (id: string, name: string) => {
+    setDeletingFarmland({ id, name });
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingFarmland) return;
+    
+    setIsDeleting(true);
     try {
-      const { error } = await supabase.from('farmlands').delete().eq('id', id);
+      const { error } = await supabase.from('farmlands').delete().eq('id', deletingFarmland.id);
       if (error) throw error;
-      toast({ title: 'Farmland deleted' });
+      toast({ title: 'Farmland deleted', description: `${deletingFarmland.name} has been removed.` });
       queryClient.invalidateQueries({ queryKey: ['farmlands', user?.id] });
+      setDeleteConfirmOpen(false);
+      setDeletingFarmland(null);
     } catch (error: any) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   const totalArea = farmlands?.reduce((sum, l) => sum + l.area, 0) || 0;
 
-  // Get soil type distribution
   const soilDistribution = farmlands?.reduce((acc, land) => {
     const soil = land.soil_type || 'unknown';
     acc[soil] = (acc[soil] || 0) + land.area;
@@ -125,7 +142,7 @@ const FarmlandsPage = () => {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">
-                    {Object.keys(soilDistribution || {}).length}
+                    {Object.keys(soilDistribution || {}).filter(k => k !== 'unknown').length}
                   </p>
                   <p className="text-xs text-muted-foreground">Soil Types</p>
                 </div>
@@ -154,7 +171,7 @@ const FarmlandsPage = () => {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search farmlands..."
+              placeholder="Search by name or village..."
               className="pl-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -162,7 +179,7 @@ const FarmlandsPage = () => {
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button size="lg">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Farmland
               </Button>
@@ -170,20 +187,29 @@ const FarmlandsPage = () => {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Add New Farmland</DialogTitle>
+                <DialogDescription>
+                  Register a new farmland plot. Fields marked with * are required.
+                </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label>Name / Plot ID *</Label>
+                  <Label className="flex items-center">
+                    Name / Plot ID *
+                    <HelpTooltip content="Give your farmland a name or use the survey number for easy identification" />
+                  </Label>
                   <Input
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g., North Field, Plot #12"
+                    placeholder="e.g., North Field, Survey #12"
                     required
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Area *</Label>
+                    <Label className="flex items-center">
+                      Area *
+                      <HelpTooltip content="The total area of this farmland" />
+                    </Label>
                     <Input
                       type="number"
                       step="0.1"
@@ -209,7 +235,10 @@ const FarmlandsPage = () => {
                   </div>
                 </div>
                 <div>
-                  <Label>Soil Type</Label>
+                  <Label className="flex items-center">
+                    Soil Type
+                    <HelpTooltip content="Knowing your soil type helps with crop recommendations" />
+                  </Label>
                   <Select value={formData.soil_type} onValueChange={(v) => setFormData({ ...formData, soil_type: v })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select soil type" />
@@ -242,7 +271,7 @@ const FarmlandsPage = () => {
                     />
                   </div>
                 </div>
-                <Button type="submit" className="w-full">Add Farmland</Button>
+                <Button type="submit" className="w-full" size="lg">Add Farmland</Button>
               </form>
             </DialogContent>
           </Dialog>
@@ -257,18 +286,30 @@ const FarmlandsPage = () => {
           </div>
         ) : filteredFarmlands?.length === 0 ? (
           <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <LandPlot className="h-12 w-12 text-muted-foreground/50 mb-4" />
-              <p className="text-muted-foreground">No farmlands added yet</p>
-              <Button variant="outline" className="mt-4" onClick={() => setIsDialogOpen(true)}>
-                Add Your First Farmland
-              </Button>
+            <CardContent className="p-0">
+              <EmptyState
+                icon={LandPlot}
+                title={searchQuery ? "No farmlands found" : "No farmlands added yet"}
+                description={
+                  searchQuery 
+                    ? "Try adjusting your search to find what you're looking for."
+                    : "Add your farmlands to track crops, manage harvests, and get better insights."
+                }
+                actionLabel={searchQuery ? "Clear Search" : "Add Your First Farmland"}
+                onAction={() => {
+                  if (searchQuery) {
+                    setSearchQuery('');
+                  } else {
+                    setIsDialogOpen(true);
+                  }
+                }}
+              />
             </CardContent>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {filteredFarmlands?.map((land) => (
-              <Card key={land.id} className="hover:shadow-medium transition-shadow">
+              <Card key={land.id} className="hover:shadow-medium transition-all group">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -284,13 +325,13 @@ const FarmlandsPage = () => {
                   <div className="space-y-2 text-sm text-muted-foreground mb-4">
                     {land.village && (
                       <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        <span>{land.village}{land.district ? `, ${land.district}` : ''}</span>
+                        <MapPin className="h-4 w-4 shrink-0" />
+                        <span className="truncate">{land.village}{land.district ? `, ${land.district}` : ''}</span>
                       </div>
                     )}
                     {land.soil_type && (
                       <div className="flex items-center gap-2">
-                        <Layers className="h-4 w-4" />
+                        <Layers className="h-4 w-4 shrink-0" />
                         <span className="capitalize">{land.soil_type} soil</span>
                       </div>
                     )}
@@ -311,8 +352,8 @@ const FarmlandsPage = () => {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(land.id)}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => handleDeleteClick(land.id, land.name)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -328,6 +369,17 @@ const FarmlandsPage = () => {
         farmland={editingFarmland}
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Delete Farmland"
+        description={`Are you sure you want to delete "${deletingFarmland?.name}"? Any crops associated with this farmland will lose their location reference.`}
+        confirmText="Delete"
+        variant="destructive"
+        onConfirm={handleDeleteConfirm}
+        loading={isDeleting}
       />
     </DashboardLayout>
   );
