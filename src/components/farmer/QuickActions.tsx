@@ -5,8 +5,8 @@ import {
   Sprout, 
   Truck, 
   Phone, 
-  Eye,
-  LandPlot
+  LandPlot,
+  ShoppingBag
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -15,15 +15,9 @@ const QuickActions = () => {
 
   const actions = [
     {
-      label: 'Add New Crop',
+      label: 'Add Crop',
       icon: Plus,
       color: 'bg-primary hover:bg-primary/90 text-primary-foreground',
-      onClick: () => navigate('/farmer/crops'),
-    },
-    {
-      label: 'View All Crops',
-      icon: Sprout,
-      color: 'bg-emerald-600 hover:bg-emerald-700 text-white',
       onClick: () => navigate('/farmer/crops'),
     },
     {
@@ -39,7 +33,13 @@ const QuickActions = () => {
       onClick: () => navigate('/farmer/transport'),
     },
     {
-      label: 'Call My Agent',
+      label: 'Create Listing',
+      icon: ShoppingBag,
+      color: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+      onClick: () => navigate('/farmer/listings'),
+    },
+    {
+      label: 'Call Agent',
       icon: Phone,
       color: 'bg-purple-600 hover:bg-purple-700 text-white',
       onClick: () => {
@@ -59,7 +59,7 @@ const QuickActions = () => {
             <Button
               key={action.label}
               onClick={action.onClick}
-              className={`h-auto flex-col gap-2 py-4 px-3 ${action.color}`}
+              className={`h-auto flex-col gap-2 py-4 px-3 shadow-sm ${action.color}`}
             >
               <action.icon className="h-6 w-6" />
               <span className="text-xs font-medium text-center leading-tight">

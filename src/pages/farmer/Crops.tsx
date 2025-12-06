@@ -5,19 +5,22 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 import { useCrops, useFarmlands, Crop, Farmland } from '@/hooks/useFarmerDashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Search, Sprout, Calendar, MapPin, Scale, Edit, Trash2, Truck, Filter } from 'lucide-react';
+import { Plus, Search, Sprout, Calendar, MapPin, Scale, Edit, Trash2, Truck } from 'lucide-react';
 import { format } from 'date-fns';
 import EditCropDialog from '@/components/farmer/EditCropDialog';
 import RequestTransportDialog from '@/components/farmer/RequestTransportDialog';
+import ConfirmDialog from '@/components/ui/confirm-dialog';
+import EmptyState from '@/components/farmer/EmptyState';
+import HelpTooltip from '@/components/farmer/HelpTooltip';
 
 const statusConfig = {
   growing: { label: 'Growing', color: 'bg-muted text-muted-foreground', dotColor: 'bg-gray-400' },
@@ -41,6 +44,9 @@ const CropsPage = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [transportCrop, setTransportCrop] = useState<(Crop & { farmland: Farmland | null }) | null>(null);
   const [transportDialogOpen, setTransportDialogOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deletingCrop, setDeletingCrop] = useState<{ id: string; name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const [formData, setFormData] = useState({
     crop_name: '',
@@ -87,7 +93,7 @@ const CropsPage = () => {
 
       if (error) throw error;
 
-      toast({ title: 'Crop added successfully' });
+      toast({ title: 'Success!', description: 'Your crop has been added successfully.' });
       setIsDialogOpen(false);
       setFormData({
         crop_name: '',
@@ -105,14 +111,26 @@ const CropsPage = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDeleteClick = (id: string, name: string) => {
+    setDeletingCrop({ id, name });
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingCrop) return;
+    
+    setIsDeleting(true);
     try {
-      const { error } = await supabase.from('crops').delete().eq('id', id);
+      const { error } = await supabase.from('crops').delete().eq('id', deletingCrop.id);
       if (error) throw error;
-      toast({ title: 'Crop deleted' });
+      toast({ title: 'Crop deleted', description: `${deletingCrop.name} has been removed.` });
       queryClient.invalidateQueries({ queryKey: ['crops', user?.id] });
+      setDeleteConfirmOpen(false);
+      setDeletingCrop(null);
     } catch (error: any) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -121,7 +139,10 @@ const CropsPage = () => {
       <div className="space-y-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setStatusFilter('all')}>
+          <Card 
+            className={`cursor-pointer hover:shadow-md transition-all ${statusFilter === 'all' ? 'ring-2 ring-primary shadow-md' : ''}`} 
+            onClick={() => setStatusFilter('all')}
+          >
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-primary/10 text-primary">
@@ -134,10 +155,10 @@ const CropsPage = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className={`cursor-pointer hover:shadow-md transition-shadow ${statusFilter === 'growing' ? 'ring-2 ring-primary' : ''}`} onClick={() => setStatusFilter('growing')}>
+          <Card className={`cursor-pointer hover:shadow-md transition-all ${statusFilter === 'growing' ? 'ring-2 ring-primary shadow-md' : ''}`} onClick={() => setStatusFilter('growing')}>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-muted text-muted-foreground">
+                <div className="p-2 rounded-lg bg-muted">
                   <div className="w-5 h-5 rounded-full bg-gray-400" />
                 </div>
                 <div>
@@ -147,10 +168,10 @@ const CropsPage = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className={`cursor-pointer hover:shadow-md transition-shadow ${statusFilter === 'one_week' ? 'ring-2 ring-primary' : ''}`} onClick={() => setStatusFilter('one_week')}>
+          <Card className={`cursor-pointer hover:shadow-md transition-all ${statusFilter === 'one_week' ? 'ring-2 ring-primary shadow-md' : ''}`} onClick={() => setStatusFilter('one_week')}>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-amber-100 text-amber-600">
+                <div className="p-2 rounded-lg bg-amber-100">
                   <div className="w-5 h-5 rounded-full bg-amber-500" />
                 </div>
                 <div>
@@ -160,10 +181,10 @@ const CropsPage = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className={`cursor-pointer hover:shadow-md transition-shadow ${statusFilter === 'ready' ? 'ring-2 ring-primary' : ''}`} onClick={() => setStatusFilter('ready')}>
+          <Card className={`cursor-pointer hover:shadow-md transition-all ${statusFilter === 'ready' ? 'ring-2 ring-primary shadow-md' : ''}`} onClick={() => setStatusFilter('ready')}>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-emerald-100 text-emerald-600">
+                <div className="p-2 rounded-lg bg-emerald-100">
                   <div className="w-5 h-5 rounded-full bg-emerald-500" />
                 </div>
                 <div>
@@ -173,10 +194,10 @@ const CropsPage = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className={`cursor-pointer hover:shadow-md transition-shadow ${statusFilter === 'harvested' ? 'ring-2 ring-primary' : ''}`} onClick={() => setStatusFilter('harvested')}>
+          <Card className={`cursor-pointer hover:shadow-md transition-all ${statusFilter === 'harvested' ? 'ring-2 ring-primary shadow-md' : ''}`} onClick={() => setStatusFilter('harvested')}>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <div className="p-2 rounded-lg bg-primary/10">
                   <div className="w-5 h-5 rounded-full bg-primary" />
                 </div>
                 <div>
@@ -193,7 +214,7 @@ const CropsPage = () => {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search crops..."
+              placeholder="Search by crop name or variety..."
               className="pl-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -201,7 +222,7 @@ const CropsPage = () => {
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button size="lg">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Crop
               </Button>
@@ -209,10 +230,16 @@ const CropsPage = () => {
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Add New Crop</DialogTitle>
+                <DialogDescription>
+                  Fill in the details about your crop. Fields marked with * are required.
+                </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label>Crop Name *</Label>
+                  <Label className="flex items-center">
+                    Crop Name *
+                    <HelpTooltip content="Enter the name of the crop you are growing, like Rice, Wheat, or Tomato" />
+                  </Label>
                   <Input
                     value={formData.crop_name}
                     onChange={(e) => setFormData({ ...formData, crop_name: e.target.value })}
@@ -221,7 +248,10 @@ const CropsPage = () => {
                   />
                 </div>
                 <div>
-                  <Label>Variety</Label>
+                  <Label className="flex items-center">
+                    Variety
+                    <HelpTooltip content="The specific variety of your crop, like Basmati for rice or IR-64" />
+                  </Label>
                   <Input
                     value={formData.variety}
                     onChange={(e) => setFormData({ ...formData, variety: e.target.value })}
@@ -229,7 +259,10 @@ const CropsPage = () => {
                   />
                 </div>
                 <div>
-                  <Label>Farmland</Label>
+                  <Label className="flex items-center">
+                    Farmland
+                    <HelpTooltip content="Select which of your farmlands this crop is planted on" />
+                  </Label>
                   <Select value={formData.land_id} onValueChange={(v) => setFormData({ ...formData, land_id: v })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select farmland" />
@@ -242,10 +275,18 @@ const CropsPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                  {(!farmlands || farmlands.length === 0) && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      No farmlands added yet. <button type="button" className="text-primary underline" onClick={() => navigate('/farmer/farmlands')}>Add farmland first</button>
+                    </p>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Sowing Date</Label>
+                    <Label className="flex items-center">
+                      Sowing Date
+                      <HelpTooltip content="When did you plant this crop?" />
+                    </Label>
                     <Input
                       type="date"
                       value={formData.sowing_date}
@@ -253,7 +294,10 @@ const CropsPage = () => {
                     />
                   </div>
                   <div>
-                    <Label>Est. Harvest Date</Label>
+                    <Label className="flex items-center">
+                      Harvest Date
+                      <HelpTooltip content="When do you expect to harvest?" />
+                    </Label>
                     <Input
                       type="date"
                       value={formData.harvest_estimate}
@@ -263,7 +307,10 @@ const CropsPage = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Est. Quantity</Label>
+                    <Label className="flex items-center">
+                      Expected Quantity
+                      <HelpTooltip content="How much crop do you expect to harvest?" />
+                    </Label>
                     <Input
                       type="number"
                       value={formData.estimated_quantity}
@@ -285,7 +332,7 @@ const CropsPage = () => {
                     </Select>
                   </div>
                 </div>
-                <Button type="submit" className="w-full">Add Crop</Button>
+                <Button type="submit" className="w-full" size="lg">Add Crop</Button>
               </form>
             </DialogContent>
           </Dialog>
@@ -300,12 +347,25 @@ const CropsPage = () => {
           </div>
         ) : filteredCrops?.length === 0 ? (
           <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Sprout className="h-12 w-12 text-muted-foreground/50 mb-4" />
-              <p className="text-muted-foreground">No crops found</p>
-              <Button variant="outline" className="mt-4" onClick={() => setIsDialogOpen(true)}>
-                Add Your First Crop
-              </Button>
+            <CardContent className="p-0">
+              <EmptyState
+                icon={Sprout}
+                title={searchQuery || statusFilter !== 'all' ? "No crops found" : "No crops added yet"}
+                description={
+                  searchQuery || statusFilter !== 'all' 
+                    ? "Try adjusting your search or filter to find what you're looking for."
+                    : "Start by adding your first crop to track its growth and manage harvests."
+                }
+                actionLabel={searchQuery || statusFilter !== 'all' ? "Clear Filters" : "Add Your First Crop"}
+                onAction={() => {
+                  if (searchQuery || statusFilter !== 'all') {
+                    setSearchQuery('');
+                    setStatusFilter('all');
+                  } else {
+                    setIsDialogOpen(true);
+                  }
+                }}
+              />
             </CardContent>
           </Card>
         ) : (
@@ -313,7 +373,7 @@ const CropsPage = () => {
             {filteredCrops?.map((crop) => {
               const status = statusConfig[crop.status];
               return (
-                <Card key={crop.id} className="hover:shadow-medium transition-shadow">
+                <Card key={crop.id} className="hover:shadow-medium transition-all group">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div>
@@ -328,19 +388,19 @@ const CropsPage = () => {
                     <div className="space-y-2 text-sm text-muted-foreground mb-4">
                       {crop.farmland && (
                         <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4" />
-                          <span>{crop.farmland.name}</span>
+                          <MapPin className="h-4 w-4 shrink-0" />
+                          <span className="truncate">{crop.farmland.name}</span>
                         </div>
                       )}
                       {crop.harvest_estimate && (
                         <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
+                          <Calendar className="h-4 w-4 shrink-0" />
                           <span>Harvest: {format(new Date(crop.harvest_estimate), 'MMM d, yyyy')}</span>
                         </div>
                       )}
                       {crop.estimated_quantity && (
                         <div className="flex items-center gap-2">
-                          <Scale className="h-4 w-4" />
+                          <Scale className="h-4 w-4 shrink-0" />
                           <span>{crop.estimated_quantity} {crop.quantity_unit}</span>
                         </div>
                       )}
@@ -363,8 +423,8 @@ const CropsPage = () => {
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(crop.id)}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDeleteClick(crop.id, crop.crop_name)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -387,6 +447,17 @@ const CropsPage = () => {
         crop={transportCrop}
         open={transportDialogOpen}
         onOpenChange={setTransportDialogOpen}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Delete Crop"
+        description={`Are you sure you want to delete "${deletingCrop?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        variant="destructive"
+        onConfirm={handleDeleteConfirm}
+        loading={isDeleting}
       />
     </DashboardLayout>
   );
