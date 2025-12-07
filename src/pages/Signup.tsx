@@ -134,6 +134,37 @@ const Signup = () => {
             console.error("Role assignment error:", roleError);
           }
 
+          // Create role-specific profile
+          if (selectedRole === "buyer") {
+            const { error: buyerError } = await supabase
+              .from("buyers")
+              .insert({
+                user_id: authData.user.id,
+                name: formData.name,
+                phone: formData.phone || null,
+              });
+            if (buyerError) console.error("Buyer profile error:", buyerError);
+          } else if (selectedRole === "logistics") {
+            const { error: transporterError } = await supabase
+              .from("transporters")
+              .insert({
+                user_id: authData.user.id,
+                name: formData.name,
+                phone: formData.phone || null,
+              });
+            if (transporterError) console.error("Transporter profile error:", transporterError);
+          } else if (selectedRole === "admin") {
+            const { error: adminError } = await supabase
+              .from("admin_users")
+              .insert({
+                user_id: authData.user.id,
+                name: formData.name,
+                email: formData.email.trim(),
+                phone: formData.phone || null,
+              });
+            if (adminError) console.error("Admin profile error:", adminError);
+          }
+
           toast({
             title: "Account created!",
             description: "Welcome to AgriSphere. You're now signed in.",
