@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Leaf, Mail, Lock, User, Phone, ArrowRight, Users, ShoppingBag, ClipboardList, Truck, Loader2, Shield, AlertCircle } from "lucide-react";
+import { Leaf, Mail, Lock, User, Phone, ArrowRight, Users, ShoppingBag, ClipboardList, Truck, Loader2, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,7 +16,6 @@ const roles: { id: AppRole; label: string; icon: typeof Users; description: stri
   { id: "buyer", label: "Buyer", icon: ShoppingBag, description: "Source quality products" },
   { id: "agent", label: "Agent", icon: ClipboardList, description: "Collect field data" },
   { id: "logistics", label: "Logistics", icon: Truck, description: "Deliver goods" },
-  { id: "admin", label: "Admin", icon: Shield, description: "Manage ecosystem" },
 ];
 
 const roleRoutes: Record<string, string> = {
@@ -156,15 +155,6 @@ const Signup = () => {
               .upsert({
                 user_id: authData.user.id,
                 name: formData.name.trim(),
-                phone: formData.phone.trim() || null,
-              }, { onConflict: 'user_id' });
-          } else if (selectedRole === "admin") {
-            await supabase
-              .from("admin_users")
-              .upsert({
-                user_id: authData.user.id,
-                name: formData.name.trim(),
-                email: formData.email.trim().toLowerCase(),
                 phone: formData.phone.trim() || null,
               }, { onConflict: 'user_id' });
           }
