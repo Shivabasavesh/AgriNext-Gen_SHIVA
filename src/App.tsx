@@ -18,6 +18,10 @@ import FarmerFarmlands from "./pages/farmer/Farmlands";
 import FarmerTransport from "./pages/farmer/Transport";
 import FarmerNotifications from "./pages/farmer/Notifications";
 import FarmerSettings from "./pages/farmer/Settings";
+import AgentDashboard from "./pages/agent/Dashboard";
+import AgentTasks from "./pages/agent/Tasks";
+import AgentFarmers from "./pages/agent/Farmers";
+import AgentTransport from "./pages/agent/Transport";
 
 const queryClient = new QueryClient();
 
@@ -103,6 +107,40 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={["farmer"]}>
                   <FarmerSettings />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Protected Agent Routes */}
+            <Route
+              path="/agent/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["agent"]}>
+                  <AgentDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/agent/tasks"
+              element={
+                <ProtectedRoute allowedRoles={["agent"]}>
+                  <AgentTasks />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/agent/farmers"
+              element={
+                <ProtectedRoute allowedRoles={["agent"]}>
+                  <AgentFarmers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/agent/transport"
+              element={
+                <ProtectedRoute allowedRoles={["agent"]}>
+                  <AgentTransport />
                 </ProtectedRoute>
               }
             />

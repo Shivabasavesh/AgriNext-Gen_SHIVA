@@ -48,19 +48,42 @@ export const useAgentTasks = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      const { data, error } = await supabase
+      // First get tasks
+      const { data: tasks, error } = await supabase
         .from('agent_tasks')
-        .select(`
-          *,
-          farmer:profiles!agent_tasks_farmer_id_fkey(full_name, village, district, phone),
-          crop:crops(crop_name, status, harvest_estimate, estimated_quantity)
-        `)
+        .select('*')
         .eq('agent_id', user.id)
         .order('due_date', { ascending: true })
         .order('priority', { ascending: false });
       
       if (error) throw error;
-      return data as unknown as AgentTask[];
+      
+      // Then get farmer and crop details
+      const enrichedTasks = await Promise.all(
+        (tasks || []).map(async (task) => {
+          // Get farmer info
+          const { data: farmer } = await supabase
+            .from('profiles')
+            .select('full_name, village, district, phone')
+            .eq('id', task.farmer_id)
+            .single();
+          
+          // Get crop info if exists
+          let crop = null;
+          if (task.crop_id) {
+            const { data: cropData } = await supabase
+              .from('crops')
+              .select('crop_name, status, harvest_estimate, estimated_quantity')
+              .eq('id', task.crop_id)
+              .single();
+            crop = cropData;
+          }
+          
+          return { ...task, farmer, crop } as AgentTask;
+        })
+      );
+      
+      return enrichedTasks;
     },
     enabled: !!user?.id,
   });
@@ -76,19 +99,39 @@ export const useTodaysTasks = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      const { data, error } = await supabase
+      const { data: tasks, error } = await supabase
         .from('agent_tasks')
-        .select(`
-          *,
-          farmer:profiles!agent_tasks_farmer_id_fkey(full_name, village, district, phone),
-          crop:crops(crop_name, status, harvest_estimate, estimated_quantity)
-        `)
+        .select('*')
         .eq('agent_id', user.id)
         .eq('due_date', today)
         .order('priority', { ascending: false });
       
       if (error) throw error;
-      return data as unknown as AgentTask[];
+      
+      // Enrich with farmer and crop details
+      const enrichedTasks = await Promise.all(
+        (tasks || []).map(async (task) => {
+          const { data: farmer } = await supabase
+            .from('profiles')
+            .select('full_name, village, district, phone')
+            .eq('id', task.farmer_id)
+            .single();
+          
+          let crop = null;
+          if (task.crop_id) {
+            const { data: cropData } = await supabase
+              .from('crops')
+              .select('crop_name, status, harvest_estimate, estimated_quantity')
+              .eq('id', task.crop_id)
+              .single();
+            crop = cropData;
+          }
+          
+          return { ...task, farmer, crop } as AgentTask;
+        })
+      );
+      
+      return enrichedTasks;
     },
     enabled: !!user?.id,
   });

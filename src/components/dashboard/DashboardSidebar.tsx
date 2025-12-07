@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -12,7 +11,10 @@ import {
   Bell,
   ShoppingBag,
   Package,
-  X
+  X,
+  ClipboardList,
+  Users,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -25,12 +27,13 @@ interface DashboardSidebarProps {
 
 const DashboardSidebar = ({ onClose }: DashboardSidebarProps) => {
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { signOut, userRole } = useAuth();
   const { data: notifications } = useFarmerNotifications();
   
   const unreadCount = notifications?.filter(n => !n.is_read).length || 0;
 
-  const navItems = [
+  // Farmer navigation items
+  const farmerNavItems = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/farmer/dashboard' },
     { icon: CropIcon, label: 'My Crops', href: '/farmer/crops' },
     { icon: LandPlot, label: 'Farmlands', href: '/farmer/farmlands' },
@@ -47,6 +50,18 @@ const DashboardSidebar = ({ onClose }: DashboardSidebarProps) => {
     { icon: Settings, label: 'Settings', href: '/farmer/settings' },
   ];
 
+  // Agent navigation items
+  const agentNavItems = [
+    { icon: LayoutDashboard, label: 'Dashboard', href: '/agent/dashboard' },
+    { icon: ClipboardList, label: 'My Tasks', href: '/agent/tasks' },
+    { icon: Users, label: 'Farmers & Crops', href: '/agent/farmers' },
+    { icon: Truck, label: 'Transport', href: '/agent/transport' },
+  ];
+
+  // Select nav items based on user role
+  const navItems = userRole === 'agent' ? agentNavItems : farmerNavItems;
+  const dashboardTitle = userRole === 'agent' ? 'Agri Mitra Agent' : 'Agri Mitra';
+
   const handleNavClick = () => {
     if (onClose) onClose();
   };
@@ -57,10 +72,24 @@ const DashboardSidebar = ({ onClose }: DashboardSidebarProps) => {
         {/* Logo */}
         <div className="flex h-16 items-center justify-between px-6 border-b border-sidebar-border">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-sidebar-primary flex items-center justify-center">
-              <Sprout className="w-5 h-5 text-sidebar-primary-foreground" />
+            <div className={cn(
+              "w-9 h-9 rounded-lg flex items-center justify-center",
+              userRole === 'agent' ? 'bg-purple-600' : 'bg-sidebar-primary'
+            )}>
+              {userRole === 'agent' ? (
+                <Sparkles className="w-5 h-5 text-white" />
+              ) : (
+                <Sprout className="w-5 h-5 text-sidebar-primary-foreground" />
+              )}
             </div>
-            <span className="font-display font-bold text-xl text-sidebar-foreground">Agri Mitra</span>
+            <div>
+              <span className="font-display font-bold text-lg text-sidebar-foreground leading-tight block">
+                {dashboardTitle}
+              </span>
+              {userRole === 'agent' && (
+                <span className="text-xs text-purple-500 font-medium">Field Operations</span>
+              )}
+            </div>
           </div>
           {/* Mobile close button */}
           <Button
@@ -85,7 +114,9 @@ const DashboardSidebar = ({ onClose }: DashboardSidebarProps) => {
                 className={cn(
                   'flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                   isActive
-                    ? 'bg-sidebar-accent text-sidebar-primary'
+                    ? userRole === 'agent' 
+                      ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                      : 'bg-sidebar-accent text-sidebar-primary'
                     : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
                 )}
               >
@@ -93,7 +124,7 @@ const DashboardSidebar = ({ onClose }: DashboardSidebarProps) => {
                   <item.icon className="h-5 w-5" />
                   {item.label}
                 </div>
-                {item.badge && (
+                {'badge' in item && typeof item.badge === 'number' && item.badge > 0 && (
                   <span className="px-1.5 py-0.5 text-xs font-medium bg-destructive text-destructive-foreground rounded-full min-w-[20px] text-center">
                     {item.badge > 9 ? '9+' : item.badge}
                   </span>
