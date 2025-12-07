@@ -15,14 +15,19 @@ import {
   Activity,
   Brain,
   UserPlus,
-  RefreshCw
+  RefreshCw,
+  Radio
 } from 'lucide-react';
 import { useAdminDashboardStats, useRecentActivity } from '@/hooks/useAdminDashboard';
+import { useAdminRealtimeSubscriptions } from '@/hooks/useAdminRealtimeSubscriptions';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 
 const AdminDashboard = () => {
+  // Enable real-time subscriptions for admin
+  useAdminRealtimeSubscriptions();
+  
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useAdminDashboardStats();
   const { data: recentActivity, isLoading: activityLoading } = useRecentActivity();
   const [aiLoading, setAiLoading] = useState<string | null>(null);
@@ -82,10 +87,17 @@ const AdminDashboard = () => {
             <h1 className="text-2xl font-bold text-foreground">Admin Command Center</h1>
             <p className="text-muted-foreground">Complete ecosystem visibility and control</p>
           </div>
-          <Button onClick={() => refetchStats()} variant="outline" size="sm">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-3">
+            {/* Live Indicator */}
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-full">
+              <Radio className="w-4 h-4 text-emerald-600 animate-pulse" />
+              <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Live</span>
+            </div>
+            <Button onClick={() => refetchStats()} variant="outline" size="sm">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Stats Grid */}
