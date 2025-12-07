@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          assigned_district: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_district?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_district?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       agent_data: {
         Row: {
           agent_id: string
@@ -111,6 +147,41 @@ export type Database = {
             columns: ["crop_id"]
             isOneToOne: false
             referencedRelation: "crops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_admin_logs: {
+        Row: {
+          admin_id: string
+          created_at: string
+          id: string
+          input_data: Json | null
+          module_type: string
+          output_text: string | null
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string
+          id?: string
+          input_data?: Json | null
+          module_type: string
+          output_text?: string | null
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          id?: string
+          input_data?: Json | null
+          module_type?: string
+          output_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_admin_logs_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
             referencedColumns: ["id"]
           },
         ]
