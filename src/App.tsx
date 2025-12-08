@@ -45,7 +45,7 @@ import AdminCrops from "./pages/admin/Crops";
 import AdminTransport from "./pages/admin/Transport";
 import AdminOrders from "./pages/admin/Orders";
 import AIConsole from "./pages/admin/AIConsole";
-
+import SeedData from "./pages/admin/SeedData";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -350,6 +350,14 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={["admin"]}>
                   <AIConsole />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/seed-data"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <SeedData />
                 </ProtectedRoute>
               }
             />
