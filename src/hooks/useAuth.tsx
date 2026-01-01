@@ -25,6 +25,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const ensureProfile = useCallback(async (userId: string, role?: string | null) => {
+    try {
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (!existing) {
+        await supabase.from('profiles').upsert({
+          id: userId,
+          full_name: null,
+          phone: null,
+          district: null,
+          village: null,
+        });
+      }
+    } catch (profileError) {
+      console.error('Error ensuring profile:', profileError);
+    }
+  }, []);
 
   const fetchUserRole = useCallback(async (userId: string) => {
     try {
@@ -39,12 +60,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUserRole(null);
         return;
       }
-      setUserRole(data?.role ?? null);
+      const role = data?.role ?? null;
+      setUserRole(role);
+      await ensureProfile(userId, role);
     } catch (error) {
       console.error('Error fetching user role:', error);
       setUserRole(null);
     }
-  }, []);
+  }, [ensureProfile]);
 
   const refreshRole = useCallback(async () => {
     if (user?.id) {

@@ -159,6 +159,15 @@ const Signup = () => {
               }, { onConflict: 'user_id' });
           }
 
+          // Create/update profile for farmer flow
+          await supabase.from("profiles").upsert({
+            id: authData.user.id,
+            full_name: formData.name.trim(),
+            phone: formData.phone.trim() || null,
+            district: null,
+            village: null,
+          }, { onConflict: 'id' });
+
           // Refresh the role in auth context
           await refreshRole();
 

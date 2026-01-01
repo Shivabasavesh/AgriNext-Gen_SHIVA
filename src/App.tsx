@@ -16,8 +16,12 @@ import FarmerListings from "./pages/farmer/Listings";
 import FarmerOrders from "./pages/farmer/Orders";
 import FarmerEarnings from "./pages/farmer/Earnings";
 import FarmerCrops from "./pages/farmer/Crops";
+import FarmerProfile from "./pages/farmer/Profile";
+import FarmerAI from "./pages/farmer/AIAdvice";
+import NewCrop from "./pages/farmer/NewCrop";
 import FarmerFarmlands from "./pages/farmer/Farmlands";
 import FarmerTransport from "./pages/farmer/Transport";
+import NewTransport from "./pages/farmer/NewTransport";
 import FarmerNotifications from "./pages/farmer/Notifications";
 import FarmerSettings from "./pages/farmer/Settings";
 import AgentDashboard from "./pages/agent/Dashboard";
@@ -89,6 +93,14 @@ const App = () => (
               }
             />
             <Route
+              path="/farmer/crops/new"
+              element={
+                <ProtectedRoute allowedRoles={["farmer"]}>
+                  <NewCrop />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/farmer/farmlands"
               element={
                 <ProtectedRoute allowedRoles={["farmer"]}>
@@ -101,6 +113,30 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={["farmer"]}>
                   <FarmerTransport />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/farmer/transport/new"
+              element={
+                <ProtectedRoute allowedRoles={["farmer"]}>
+                  <NewTransport />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/farmer/profile"
+              element={
+                <ProtectedRoute allowedRoles={["farmer"]}>
+                  <FarmerProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/farmer/ai"
+              element={
+                <ProtectedRoute allowedRoles={["farmer"]}>
+                  <FarmerAI />
                 </ProtectedRoute>
               }
             />

@@ -248,6 +248,41 @@ export type Database = {
           },
         ]
       }
+      ai_logs: {
+        Row: {
+          created_at: string
+          id: string
+          input_data: Json | null
+          module_type: string
+          output_data: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          input_data?: Json | null
+          module_type: string
+          output_data?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          input_data?: Json | null
+          module_type?: string
+          output_data?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_transport_logs: {
         Row: {
           created_at: string
@@ -326,11 +361,15 @@ export type Database = {
         Row: {
           created_at: string
           crop_name: string
+          district: string | null
+          expected_harvest_date: string | null
+          expected_quantity_kg: number | null
           estimated_quantity: number | null
           farmer_id: string
           harvest_estimate: string | null
           id: string
           land_id: string | null
+          mvp_status: string | null
           quantity_unit: string | null
           sowing_date: string | null
           status: Database["public"]["Enums"]["crop_status"]
@@ -340,11 +379,15 @@ export type Database = {
         Insert: {
           created_at?: string
           crop_name: string
+          district?: string | null
+          expected_harvest_date?: string | null
+          expected_quantity_kg?: number | null
           estimated_quantity?: number | null
           farmer_id: string
           harvest_estimate?: string | null
           id?: string
           land_id?: string | null
+          mvp_status?: string | null
           quantity_unit?: string | null
           sowing_date?: string | null
           status?: Database["public"]["Enums"]["crop_status"]
@@ -354,11 +397,15 @@ export type Database = {
         Update: {
           created_at?: string
           crop_name?: string
+          district?: string | null
+          expected_harvest_date?: string | null
+          expected_quantity_kg?: number | null
           estimated_quantity?: number | null
           farmer_id?: string
           harvest_estimate?: string | null
           id?: string
           land_id?: string | null
+          mvp_status?: string | null
           quantity_unit?: string | null
           sowing_date?: string | null
           status?: Database["public"]["Enums"]["crop_status"]
@@ -814,11 +861,13 @@ export type Database = {
           id: string
           notes: string | null
           pickup_location: string
+          pickup_location_text: string | null
           pickup_photo_url: string | null
           pickup_village: string | null
           preferred_date: string | null
           preferred_time: string | null
           quantity: number
+          quantity_kg: number | null
           quantity_unit: string | null
           status: Database["public"]["Enums"]["transport_status"]
           transporter_id: string | null
@@ -835,11 +884,13 @@ export type Database = {
           id?: string
           notes?: string | null
           pickup_location: string
+          pickup_location_text?: string | null
           pickup_photo_url?: string | null
           pickup_village?: string | null
           preferred_date?: string | null
           preferred_time?: string | null
           quantity: number
+          quantity_kg?: number | null
           quantity_unit?: string | null
           status?: Database["public"]["Enums"]["transport_status"]
           transporter_id?: string | null
@@ -856,11 +907,13 @@ export type Database = {
           id?: string
           notes?: string | null
           pickup_location?: string
+          pickup_location_text?: string | null
           pickup_photo_url?: string | null
           pickup_village?: string | null
           preferred_date?: string | null
           preferred_time?: string | null
           quantity?: number
+          quantity_kg?: number | null
           quantity_unit?: string | null
           status?: Database["public"]["Enums"]["transport_status"]
           transporter_id?: string | null
