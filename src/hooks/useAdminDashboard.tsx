@@ -15,6 +15,74 @@ export interface AdminUser {
   updated_at: string;
 }
 
+export interface AdminDashboardSummary {
+  totalFarmers: number;
+  totalAgents: number;
+  totalTransporters: number;
+  activeTransporters?: number;
+  totalBuyers: number;
+  totalCrops: number;
+  cropsByStatus: Record<string, number>;
+  totalTransportRequests: number;
+  totalTransportJobs: number;
+  totalMarketplaceListings: number;
+  totalOrders: number;
+  harvestReady: number;
+  oneWeekAway: number;
+  pendingTransport: number;
+  activeTransport: number;
+  pendingOrders: number;
+  newOrdersToday: number;
+}
+
+export type AdminActivityItem = {
+  id: string;
+  type: 'order' | 'transport' | 'crop';
+  message: string;
+  time: string;
+};
+
+interface AdminDashboardResponse {
+  summary?: Partial<AdminDashboardSummary>;
+  recentActivity?: AdminActivityItem[];
+}
+
+const fetchAdminDashboard = async (): Promise<{
+  summary: AdminDashboardSummary;
+  recentActivity: AdminActivityItem[];
+}> => {
+  const { data, error } = await supabase.functions.invoke<AdminDashboardResponse>('admin-dashboard');
+  
+  if (error) throw error;
+
+  const transportersCount = data?.summary?.totalTransporters ?? data?.summary?.activeTransporters ?? 0;
+  
+  const summary: AdminDashboardSummary = {
+    totalFarmers: data?.summary?.totalFarmers ?? 0,
+    totalAgents: data?.summary?.totalAgents ?? 0,
+    totalTransporters: transportersCount,
+    activeTransporters: data?.summary?.activeTransporters ?? transportersCount,
+    totalBuyers: data?.summary?.totalBuyers ?? 0,
+    totalCrops: data?.summary?.totalCrops ?? 0,
+    cropsByStatus: data?.summary?.cropsByStatus ?? {},
+    totalTransportRequests: data?.summary?.totalTransportRequests ?? 0,
+    totalTransportJobs: data?.summary?.totalTransportJobs ?? 0,
+    totalMarketplaceListings: data?.summary?.totalMarketplaceListings ?? 0,
+    totalOrders: data?.summary?.totalOrders ?? 0,
+    harvestReady: data?.summary?.harvestReady ?? 0,
+    oneWeekAway: data?.summary?.oneWeekAway ?? 0,
+    pendingTransport: data?.summary?.pendingTransport ?? 0,
+    activeTransport: data?.summary?.activeTransport ?? 0,
+    pendingOrders: data?.summary?.pendingOrders ?? 0,
+    newOrdersToday: data?.summary?.newOrdersToday ?? 0,
+  };
+
+  return {
+    summary,
+    recentActivity: data?.recentActivity ?? [],
+  };
+};
+
 // Get admin profile
 export const useAdminProfile = () => {
   const { user } = useAuth();
@@ -72,48 +140,26 @@ export const useCreateAdminProfile = () => {
   });
 };
 
-// Dashboard Stats
-export const useAdminDashboardStats = () => {
+const useAdminDashboardData = () => {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: ['admin-dashboard-stats'],
-    queryFn: async () => {
-      const [
-        farmersRes,
-        cropsRes,
-        transportRes,
-        ordersRes,
-        buyersRes,
-        transportersRes,
-      ] = await Promise.all([
-        supabase.from('profiles').select('id', { count: 'exact' }),
-        supabase.from('crops').select('id, status', { count: 'exact' }),
-        supabase.from('transport_requests').select('id, status', { count: 'exact' }),
-        supabase.from('market_orders').select('id, status, created_at', { count: 'exact' }),
-        supabase.from('buyers').select('id', { count: 'exact' }),
-        supabase.from('transporters').select('id', { count: 'exact' }),
-      ]);
-
-      const crops = cropsRes.data || [];
-      const transport = transportRes.data || [];
-      const orders = ordersRes.data || [];
-      
-      const today = new Date().toISOString().split('T')[0];
-      const newOrdersToday = orders.filter(o => o.created_at?.startsWith(today)).length;
-
-      return {
-        totalFarmers: farmersRes.count || 0,
-        totalBuyers: buyersRes.count || 0,
-        activeTransporters: transportersRes.count || 0,
-        totalCrops: crops.length,
-        harvestReady: crops.filter(c => c.status === 'ready').length,
-        oneWeekAway: crops.filter(c => c.status === 'one_week').length,
-        pendingTransport: transport.filter(t => t.status === 'requested').length,
-        activeTransport: transport.filter(t => ['assigned', 'en_route', 'picked_up'].includes(t.status)).length,
-        newOrdersToday,
-        pendingOrders: orders.filter(o => o.status === 'requested').length,
-      };
+    queryFn: fetchAdminDashboard,
+    onSuccess: (data) => {
+      queryClient.setQueryData(['admin-recent-activity'], data.recentActivity ?? []);
     },
   });
+};
+
+// Dashboard Stats
+export const useAdminDashboardStats = () => {
+  const query = useAdminDashboardData();
+  
+  return {
+    ...query,
+    data: query.data?.summary,
+  };
 };
 
 // All Farmers
@@ -415,45 +461,20 @@ export const useUpdateOrderStatus = () => {
 
 // Recent Activity
 export const useRecentActivity = () => {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: ['admin-recent-activity'],
     queryFn: async () => {
-      const [ordersRes, transportRes, cropsRes] = await Promise.all([
-        supabase.from('market_orders').select('id, status, created_at').order('created_at', { ascending: false }).limit(5),
-        supabase.from('transport_requests').select('id, status, created_at').order('created_at', { ascending: false }).limit(5),
-        supabase.from('crops').select('id, crop_name, status, created_at').order('created_at', { ascending: false }).limit(5),
-      ]);
-
-      const activities: Array<{ id: string; type: string; message: string; time: string }> = [];
-
-      (ordersRes.data || []).forEach(o => {
-        activities.push({
-          id: o.id,
-          type: 'order',
-          message: `New order placed (${o.status})`,
-          time: o.created_at,
-        });
+      const data = await queryClient.fetchQuery({
+        queryKey: ['admin-dashboard-stats'],
+        queryFn: fetchAdminDashboard,
       });
-
-      (transportRes.data || []).forEach(t => {
-        activities.push({
-          id: t.id,
-          type: 'transport',
-          message: `Transport request (${t.status})`,
-          time: t.created_at,
-        });
-      });
-
-      (cropsRes.data || []).forEach(c => {
-        activities.push({
-          id: c.id,
-          type: 'crop',
-          message: `Crop added: ${c.crop_name}`,
-          time: c.created_at,
-        });
-      });
-
-      return activities.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 10);
+      return data.recentActivity ?? [];
+    },
+    initialData: () => {
+      const cached = queryClient.getQueryData<{ summary: AdminDashboardSummary; recentActivity: AdminActivityItem[] }>(['admin-dashboard-stats']);
+      return cached?.recentActivity;
     },
   });
 };
