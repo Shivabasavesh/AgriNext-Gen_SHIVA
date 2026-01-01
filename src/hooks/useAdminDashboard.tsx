@@ -206,12 +206,12 @@ export const useAllAgents = () => {
         (profiles || []).map(async (profile) => {
           const [roleRes, tasksRes, agentDataRes] = await Promise.all([
             supabase.from('user_roles').select('role').eq('user_id', profile.id).maybeSingle(),
-            supabase.from('agent_tasks').select('id, task_status').eq('agent_id', profile.id),
+            supabase.from('agent_tasks').select('id, status').eq('agent_id', profile.id),
             supabase.from('agent_data').select('farmer_id').eq('agent_id', profile.id),
           ]);
           
           const tasks = tasksRes.data || [];
-          const completedTasks = tasks.filter(t => t.task_status === 'completed').length;
+          const completedTasks = tasks.filter(t => t.status === 'DONE').length;
           const farmersHandled = new Set((agentDataRes.data || []).map(d => d.farmer_id)).size;
           
           return {

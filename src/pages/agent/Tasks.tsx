@@ -45,24 +45,26 @@ import {
   Calendar, 
   CheckCircle, 
   Clock, 
-  Play,
-  Filter,
   Search
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 const taskTypeLabels: Record<string, string> = {
-  visit: 'Farm Visit',
-  verify_crop: 'Verify Crop',
-  harvest_check: 'Harvest Check',
-  transport_assist: 'Transport Assist',
+  VISIT: 'Farm Visit',
+  VERIFY: 'Verify Task',
+  UPDATE: 'Update/Assist',
 };
 
 const statusColors: Record<string, string> = {
-  pending: 'bg-amber-100 text-amber-800',
-  in_progress: 'bg-blue-100 text-blue-800',
-  completed: 'bg-green-100 text-green-800',
+  OPEN: 'bg-amber-100 text-amber-800',
+  DONE: 'bg-green-100 text-green-800',
+};
+
+const statusLabels: Record<string, string> = {
+  OPEN: 'Open',
+  DONE: 'Done',
 };
 
 const AgentTasks = () => {
@@ -71,6 +73,7 @@ const AgentTasks = () => {
   const { data: crops } = useAllCrops();
   const updateStatus = useUpdateTaskStatus();
   const createTask = useCreateTask();
+  const navigate = useNavigate();
   
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -81,13 +84,13 @@ const AgentTasks = () => {
   const [newTask, setNewTask] = useState({
     farmer_id: '',
     crop_id: '',
-    task_type: 'visit' as 'visit' | 'verify_crop' | 'harvest_check' | 'transport_assist',
+    task_type: 'VISIT' as 'VISIT' | 'VERIFY' | 'UPDATE',
     due_date: new Date().toISOString().split('T')[0],
     notes: '',
   });
 
   const filteredTasks = tasks?.filter((task) => {
-    const matchesStatus = filterStatus === 'all' || task.task_status === filterStatus;
+    const matchesStatus = filterStatus === 'all' || task.status === filterStatus;
     const matchesSearch = 
       task.farmer?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       task.farmer?.village?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -113,7 +116,7 @@ const AgentTasks = () => {
         setNewTask({
           farmer_id: '',
           crop_id: '',
-          task_type: 'visit',
+          task_type: 'VISIT',
           due_date: new Date().toISOString().split('T')[0],
           notes: '',
         });
@@ -121,7 +124,7 @@ const AgentTasks = () => {
     });
   };
 
-  const handleStatusChange = (task: AgentTask, newStatus: 'pending' | 'in_progress' | 'completed') => {
+  const handleStatusChange = (task: AgentTask, newStatus: 'OPEN' | 'DONE') => {
     updateStatus.mutate({ taskId: task.id, status: newStatus });
   };
 
@@ -200,10 +203,9 @@ const AgentTasks = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="visit">Farm Visit</SelectItem>
-                      <SelectItem value="verify_crop">Verify Crop</SelectItem>
-                      <SelectItem value="harvest_check">Harvest Check</SelectItem>
-                      <SelectItem value="transport_assist">Transport Assist</SelectItem>
+                      <SelectItem value="VISIT">Farm Visit</SelectItem>
+                      <SelectItem value="VERIFY">Verification</SelectItem>
+                      <SelectItem value="UPDATE">Update/Support</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -252,7 +254,7 @@ const AgentTasks = () => {
                 />
               </div>
               <div className="flex gap-2">
-                {['all', 'pending', 'in_progress', 'completed'].map((status) => (
+                {['all', 'OPEN', 'DONE'].map((status) => (
                   <Button
                     key={status}
                     variant={filterStatus === status ? 'default' : 'outline'}
@@ -326,32 +328,29 @@ const AgentTasks = () => {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <Badge className={statusColors[task.task_status]}>
-                            {task.task_status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
-                            {task.task_status === 'in_progress' && <Play className="h-3 w-3 mr-1" />}
-                            {task.task_status === 'completed' && <CheckCircle className="h-3 w-3 mr-1" />}
-                            {task.task_status.replace('_', ' ')}
+                          <Badge className={statusColors[task.status]}>
+                            {task.status === 'OPEN' && <Clock className="h-3 w-3 mr-1" />}
+                            {task.status === 'DONE' && <CheckCircle className="h-3 w-3 mr-1" />}
+                            {statusLabels[task.status] ?? task.status}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {task.task_status === 'pending' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="mr-2"
+                            onClick={() => navigate(`/agent/tasks/${task.id}`)}
+                          >
+                            Open
+                          </Button>
+                          {task.status === 'OPEN' ? (
                             <Button
                               size="sm"
-                              variant="outline"
-                              onClick={() => handleStatusChange(task, 'in_progress')}
+                              onClick={() => handleStatusChange(task, 'DONE')}
                             >
-                              Start
+                              Mark Done
                             </Button>
-                          )}
-                          {task.task_status === 'in_progress' && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleStatusChange(task, 'completed')}
-                            >
-                              Complete
-                            </Button>
-                          )}
-                          {task.task_status === 'completed' && (
+                          ) : (
                             <span className="text-sm text-green-600">Done</span>
                           )}
                         </TableCell>

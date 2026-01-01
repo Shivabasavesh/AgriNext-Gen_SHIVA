@@ -24,6 +24,9 @@ import AgentDashboard from "./pages/agent/Dashboard";
 import AgentTasks from "./pages/agent/Tasks";
 import AgentFarmers from "./pages/agent/Farmers";
 import AgentTransport from "./pages/agent/Transport";
+import TaskDetail from "./pages/agent/TaskDetail";
+import AgentProfile from "./pages/agent/Profile";
+import AgentAi from "./pages/agent/Ai";
 import LogisticsDashboard from "./pages/logistics/Dashboard";
 import LogisticsAvailableLoads from "./pages/logistics/AvailableLoads";
 import LogisticsActiveTrips from "./pages/logistics/ActiveTrips";
@@ -163,6 +166,14 @@ const App = () => (
               }
             />
             <Route
+              path="/agent/tasks/:id"
+              element={
+                <ProtectedRoute allowedRoles={["agent"]}>
+                  <TaskDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/agent/farmers"
               element={
                 <ProtectedRoute allowedRoles={["agent"]}>
@@ -175,6 +186,22 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={["agent"]}>
                   <AgentTransport />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/agent/profile"
+              element={
+                <ProtectedRoute allowedRoles={["agent"]}>
+                  <AgentProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/agent/ai"
+              element={
+                <ProtectedRoute allowedRoles={["agent"]}>
+                  <AgentAi />
                 </ProtectedRoute>
               }
             />

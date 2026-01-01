@@ -7,16 +7,19 @@ import { ClipboardList, MapPin, ChevronRight, CheckCircle, Clock, Play } from 'l
 import { useNavigate } from 'react-router-dom';
 
 const taskTypeLabels: Record<string, string> = {
-  visit: 'Farm Visit',
-  verify_crop: 'Verify Crop',
-  harvest_check: 'Harvest Check',
-  transport_assist: 'Transport Assist',
+  VISIT: 'Farm Visit',
+  VERIFY: 'Verify Task',
+  UPDATE: 'Update/Assist',
 };
 
 const statusColors: Record<string, string> = {
-  pending: 'bg-amber-100 text-amber-800',
-  in_progress: 'bg-blue-100 text-blue-800',
-  completed: 'bg-green-100 text-green-800',
+  OPEN: 'bg-amber-100 text-amber-800',
+  DONE: 'bg-green-100 text-green-800',
+};
+
+const statusLabels: Record<string, string> = {
+  OPEN: 'Open',
+  DONE: 'Done',
 };
 
 const TodaysTaskList = () => {
@@ -25,15 +28,8 @@ const TodaysTaskList = () => {
   const navigate = useNavigate();
 
   const handleStatusChange = (task: AgentTask) => {
-    let newStatus: 'pending' | 'in_progress' | 'completed';
-    if (task.task_status === 'pending') {
-      newStatus = 'in_progress';
-    } else if (task.task_status === 'in_progress') {
-      newStatus = 'completed';
-    } else {
-      return;
-    }
-    updateStatus.mutate({ taskId: task.id, status: newStatus });
+    if (task.status === 'DONE') return;
+    updateStatus.mutate({ taskId: task.id, status: 'DONE' });
   };
 
   if (isLoading) {
@@ -102,20 +98,19 @@ const TodaysTaskList = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge className={statusColors[task.task_status]}>
-                    {task.task_status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
-                    {task.task_status === 'in_progress' && <Play className="h-3 w-3 mr-1" />}
-                    {task.task_status === 'completed' && <CheckCircle className="h-3 w-3 mr-1" />}
-                    {task.task_status.replace('_', ' ')}
+                  <Badge className={statusColors[task.status]}>
+                    {task.status === 'OPEN' && <Clock className="h-3 w-3 mr-1" />}
+                    {task.status === 'DONE' && <CheckCircle className="h-3 w-3 mr-1" />}
+                    {statusLabels[task.status] ?? task.status}
                   </Badge>
-                  {task.task_status !== 'completed' && (
+                  {task.status !== 'DONE' && (
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => handleStatusChange(task)}
                       disabled={updateStatus.isPending}
                     >
-                      {task.task_status === 'pending' ? 'Start' : 'Complete'}
+                      Mark Done
                     </Button>
                   )}
                 </div>

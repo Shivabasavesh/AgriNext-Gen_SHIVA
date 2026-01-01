@@ -14,7 +14,8 @@ import {
   X,
   ClipboardList,
   Users,
-  Sparkles
+  Sparkles,
+  User
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -55,7 +56,9 @@ const DashboardSidebar = ({ onClose }: DashboardSidebarProps) => {
     { icon: LayoutDashboard, label: 'Dashboard', href: '/agent/dashboard' },
     { icon: ClipboardList, label: 'My Tasks', href: '/agent/tasks' },
     { icon: Users, label: 'Farmers & Crops', href: '/agent/farmers' },
+    { icon: Sparkles, label: 'AI Prioritize', href: '/agent/ai' },
     { icon: Truck, label: 'Transport', href: '/agent/transport' },
+    { icon: User, label: 'Profile', href: '/agent/profile' },
   ];
 
   // Logistics navigation items

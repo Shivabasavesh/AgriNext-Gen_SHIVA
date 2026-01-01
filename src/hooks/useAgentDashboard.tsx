@@ -9,8 +9,8 @@ export interface AgentTask {
   agent_id: string;
   farmer_id: string;
   crop_id: string | null;
-  task_type: 'visit' | 'verify_crop' | 'harvest_check' | 'transport_assist';
-  task_status: 'pending' | 'in_progress' | 'completed';
+  task_type: 'VISIT' | 'VERIFY' | 'UPDATE';
+  status: 'OPEN' | 'DONE';
   due_date: string;
   notes: string | null;
   priority: number;
@@ -48,42 +48,19 @@ export const useAgentTasks = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      // First get tasks
       const { data: tasks, error } = await supabase
         .from('agent_tasks')
-        .select('*')
+        .select(`
+          *,
+          farmer:profiles!agent_tasks_farmer_id_fkey(full_name, village, district, phone),
+          crop:crops(crop_name, status, harvest_estimate, estimated_quantity)
+        `)
         .eq('agent_id', user.id)
         .order('due_date', { ascending: true })
         .order('priority', { ascending: false });
       
       if (error) throw error;
-      
-      // Then get farmer and crop details
-      const enrichedTasks = await Promise.all(
-        (tasks || []).map(async (task) => {
-          // Get farmer info
-          const { data: farmer } = await supabase
-            .from('profiles')
-            .select('full_name, village, district, phone')
-            .eq('id', task.farmer_id)
-            .single();
-          
-          // Get crop info if exists
-          let crop = null;
-          if (task.crop_id) {
-            const { data: cropData } = await supabase
-              .from('crops')
-              .select('crop_name, status, harvest_estimate, estimated_quantity')
-              .eq('id', task.crop_id)
-              .single();
-            crop = cropData;
-          }
-          
-          return { ...task, farmer, crop } as AgentTask;
-        })
-      );
-      
-      return enrichedTasks;
+      return (tasks || []) as AgentTask[];
     },
     enabled: !!user?.id,
   });
@@ -101,37 +78,17 @@ export const useTodaysTasks = () => {
       
       const { data: tasks, error } = await supabase
         .from('agent_tasks')
-        .select('*')
+        .select(`
+          *,
+          farmer:profiles!agent_tasks_farmer_id_fkey(full_name, village, district, phone),
+          crop:crops(crop_name, status, harvest_estimate, estimated_quantity)
+        `)
         .eq('agent_id', user.id)
         .eq('due_date', today)
         .order('priority', { ascending: false });
       
       if (error) throw error;
-      
-      // Enrich with farmer and crop details
-      const enrichedTasks = await Promise.all(
-        (tasks || []).map(async (task) => {
-          const { data: farmer } = await supabase
-            .from('profiles')
-            .select('full_name, village, district, phone')
-            .eq('id', task.farmer_id)
-            .single();
-          
-          let crop = null;
-          if (task.crop_id) {
-            const { data: cropData } = await supabase
-              .from('crops')
-              .select('crop_name, status, harvest_estimate, estimated_quantity')
-              .eq('id', task.crop_id)
-              .single();
-            crop = cropData;
-          }
-          
-          return { ...task, farmer, crop } as AgentTask;
-        })
-      );
-      
-      return enrichedTasks;
+      return (tasks || []) as AgentTask[];
     },
     enabled: !!user?.id,
   });
@@ -198,11 +155,11 @@ export const useUpdateTaskStatus = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ taskId, status, notes }: { taskId: string; status: 'pending' | 'in_progress' | 'completed'; notes?: string }) => {
+    mutationFn: async ({ taskId, status, notes }: { taskId: string; status: 'OPEN' | 'DONE'; notes?: string }) => {
       const { error } = await supabase
         .from('agent_tasks')
         .update({ 
-          task_status: status,
+          status,
           notes: notes || null,
           updated_at: new Date().toISOString()
         })
@@ -231,7 +188,7 @@ export const useCreateTask = () => {
     mutationFn: async (task: { 
       farmer_id: string; 
       crop_id?: string | null; 
-      task_type: 'visit' | 'verify_crop' | 'harvest_check' | 'transport_assist';
+      task_type: 'VISIT' | 'VERIFY' | 'UPDATE';
       due_date: string;
       notes?: string;
     }) => {
@@ -292,74 +249,66 @@ export const useUpdateCropStatus = () => {
   });
 };
 
-// AI Visit Prioritization
-export const useAIVisitPrioritization = () => {
-  const { user } = useAuth();
-  
+// Create visit entry
+export const useCreateVisit = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: async (tasks: AgentTask[]) => {
-      const { data, error } = await supabase.functions.invoke('agent-ai', {
-        body: {
-          type: 'visit_prioritization',
-          context: {
-            tasks: tasks.map(t => ({
-              id: t.id,
-              farmer: t.farmer?.full_name || 'Unknown',
-              village: t.farmer?.village || 'Unknown',
-              taskType: t.task_type,
-              cropName: t.crop?.crop_name || 'N/A',
-              cropStatus: t.crop?.status || 'N/A',
-              harvestEstimate: t.crop?.harvest_estimate || 'N/A',
-              estimatedQuantity: t.crop?.estimated_quantity || 0,
-            })),
-          },
-        },
+    mutationFn: async (payload: {
+      id: string;
+      agent_id: string;
+      farmer_id: string;
+      crop_id?: string | null;
+      task_id?: string | null;
+      notes?: string;
+      geo_text?: string;
+      visit_date?: string;
+      photo_urls?: string[];
+    }) => {
+      const { error } = await supabase.from('agent_visits').insert({
+        id: payload.id,
+        agent_id: payload.agent_id,
+        farmer_id: payload.farmer_id,
+        crop_id: payload.crop_id || null,
+        task_id: payload.task_id || null,
+        notes: payload.notes || null,
+        geo_text: payload.geo_text || null,
+        visit_date: payload.visit_date || new Date().toISOString().split('T')[0],
+        photo_urls: payload.photo_urls || [],
       });
-      
+
       if (error) throw error;
-      
-      // Log the AI usage
-      await supabase.from('ai_agent_logs').insert({
-        agent_id: user?.id,
-        log_type: 'visit_prioritization',
-        input_context: { taskCount: tasks.length },
-        output_text: data.result,
-      });
-      
-      return data.result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agent-tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['today-tasks'] });
+      toast.success('Visit logged');
+    },
+    onError: (error) => {
+      toast.error('Failed to log visit');
+      console.error(error);
     },
   });
 };
 
-// AI Cluster Summary
-export const useAIClusterSummary = () => {
-  const { user } = useAuth();
-  
+// AI Prioritization (edge function)
+export const useAgentPrioritize = () => {
   return useMutation({
-    mutationFn: async (clusterData: any) => {
-      const { data, error } = await supabase.functions.invoke('agent-ai', {
-        body: {
-          type: 'cluster_summary',
-          context: { clusterData },
-        },
+    mutationFn: async ({ date }: { date?: string }) => {
+      const { data, error } = await supabase.functions.invoke('agent_prioritize', {
+        body: { date },
       });
-      
+
       if (error) throw error;
-      
-      // Log the AI usage
-      await supabase.from('ai_agent_logs').insert({
-        agent_id: user?.id,
-        log_type: 'cluster_summary',
-        input_context: clusterData,
-        output_text: data.result,
-      });
-      
-      return data.result;
+      const payload = (data as any)?.data ?? data;
+      return payload as {
+        prioritized: { task_id: string; rank: number; reason: string }[];
+      };
     },
   });
 };
 
-// Fetch AI logs
+// Fetch AI logs from shared table
 export const useAILogs = () => {
   const { user } = useAuth();
   
@@ -369,16 +318,91 @@ export const useAILogs = () => {
       if (!user?.id) return [];
       
       const { data, error } = await supabase
-        .from('ai_agent_logs')
+        .from('ai_logs')
         .select('*')
-        .eq('agent_id', user.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(10);
       
       if (error) throw error;
-      return data as AIAgentLog[];
+      return data as any[];
     },
     enabled: !!user?.id,
+  });
+};
+
+// Fetch single task with relations
+export const useAgentTask = (taskId?: string) => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['agent-task', taskId, user?.id],
+    queryFn: async () => {
+      if (!taskId || !user?.id) return null;
+
+      const { data, error } = await supabase
+        .from('agent_tasks')
+        .select(`
+          *,
+          farmer:profiles!agent_tasks_farmer_id_fkey(full_name, village, district, phone),
+          crop:crops(id, crop_name, status, harvest_estimate, estimated_quantity, district)
+        `)
+        .eq('id', taskId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data as AgentTask | null;
+    },
+    enabled: !!taskId && !!user?.id,
+  });
+};
+
+// Profile fetching/updating for agents
+export const useAgentProfile = () => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['agent-profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+};
+
+export const useUpdateAgentProfile = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { full_name?: string; phone?: string; district?: string }) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: payload.full_name,
+          phone: payload.phone,
+          district: payload.district,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', (await supabase.auth.getUser()).data.user?.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agent-profile'] });
+      toast.success('Profile updated');
+    },
+    onError: (error) => {
+      toast.error('Failed to update profile');
+      console.error(error);
+    },
   });
 };
 
@@ -392,7 +416,7 @@ export const useAgentDashboardStats = () => {
   const farmers = new Set(tasks?.map(t => t.farmer_id) || []);
   const readyCrops = allCrops?.filter(c => c.status === 'ready' || c.status === 'one_week') || [];
   const pendingTransport = transportRequests?.filter(t => t.status === 'requested') || [];
-  const completedToday = todayTasks?.filter(t => t.task_status === 'completed').length || 0;
+  const completedToday = todayTasks?.filter(t => t.status === 'DONE').length || 0;
   
   return {
     farmersAssigned: farmers.size,

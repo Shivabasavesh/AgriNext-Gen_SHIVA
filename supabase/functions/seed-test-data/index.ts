@@ -438,28 +438,28 @@ Deno.serve(async (req) => {
     
     const agentTaskData = [
       // Completed tasks (4)
-      { agentIdx: 0, farmerIdx: 0, cropIdx: 0, type: "visit", status: "completed", daysOffset: -5, priority: 1, notes: "Visited Ramesh Gowda's farm. Tomato crop healthy, ready for harvest. Advised on optimal harvest timing." },
-      { agentIdx: 1, farmerIdx: 2, cropIdx: 6, type: "verify_crop", status: "completed", daysOffset: -3, priority: 2, notes: "Verified chilli crop quality. Grade A estimated at 60%, Grade B 30%. Good color and size." },
-      { agentIdx: 2, farmerIdx: 6, cropIdx: 4, type: "harvest_check", status: "completed", daysOffset: -2, priority: 1, notes: "Beans harvest complete. Actual yield 620kg vs estimated 600kg. Quality excellent." },
-      { agentIdx: 3, farmerIdx: 4, cropIdx: 5, type: "transport_assist", status: "completed", daysOffset: -1, priority: 3, notes: "Coordinated transport for Veeresh's brinjal. Raju Transport assigned. Pickup completed." },
+      { agentIdx: 0, farmerIdx: 0, cropIdx: 0, type: "VISIT", status: "DONE", daysOffset: -5, priority: 1, notes: "Visited Ramesh Gowda's farm. Tomato crop healthy, ready for harvest. Advised on optimal harvest timing." },
+      { agentIdx: 1, farmerIdx: 2, cropIdx: 6, type: "VERIFY", status: "DONE", daysOffset: -3, priority: 2, notes: "Verified chilli crop quality. Grade A estimated at 60%, Grade B 30%. Good color and size." },
+      { agentIdx: 2, farmerIdx: 6, cropIdx: 4, type: "UPDATE", status: "DONE", daysOffset: -2, priority: 1, notes: "Beans harvest complete. Actual yield 620kg vs estimated 600kg. Quality excellent." },
+      { agentIdx: 3, farmerIdx: 4, cropIdx: 5, type: "UPDATE", status: "DONE", daysOffset: -1, priority: 3, notes: "Coordinated transport for Veeresh's brinjal. Raju Transport assigned. Pickup completed." },
       
       // In-progress tasks (6)
-      { agentIdx: 0, farmerIdx: 1, cropIdx: 1, type: "harvest_check", status: "in_progress", daysOffset: 0, priority: 1, notes: "Onion crop inspection started. Bulb formation looks good. Checking moisture levels." },
-      { agentIdx: 1, farmerIdx: 3, cropIdx: 7, type: "visit", status: "in_progress", daysOffset: 0, priority: 2, notes: "Routine visit to Sheela Amma. Discussing upcoming tomato harvest planning." },
-      { agentIdx: 2, farmerIdx: 7, cropIdx: 8, type: "verify_crop", status: "in_progress", daysOffset: 1, priority: 1, notes: "Verifying ragi crop health. Early signs of fungal infection detected. Suggesting treatment." },
-      { agentIdx: 3, farmerIdx: 5, cropIdx: 9, type: "harvest_check", status: "in_progress", daysOffset: 0, priority: 2, notes: "Rice crop nearing harvest. Checking grain maturity and moisture content." },
-      { agentIdx: 0, farmerIdx: 8, cropIdx: 10, type: "visit", status: "in_progress", daysOffset: 1, priority: 3, notes: "Visiting Girish Patil for potato crop assessment. Previous yield was excellent." },
-      { agentIdx: 1, farmerIdx: 9, cropIdx: 11, type: "transport_assist", status: "in_progress", daysOffset: 0, priority: 1, notes: "Arranging transport for Ravi Patil's maize harvest. Coordinating with local transporters." },
+      { agentIdx: 0, farmerIdx: 1, cropIdx: 1, type: "UPDATE", status: "OPEN", daysOffset: 0, priority: 1, notes: "Onion crop inspection started. Bulb formation looks good. Checking moisture levels." },
+      { agentIdx: 1, farmerIdx: 3, cropIdx: 7, type: "VISIT", status: "OPEN", daysOffset: 0, priority: 2, notes: "Routine visit to Sheela Amma. Discussing upcoming tomato harvest planning." },
+      { agentIdx: 2, farmerIdx: 7, cropIdx: 8, type: "VERIFY", status: "OPEN", daysOffset: 1, priority: 1, notes: "Verifying ragi crop health. Early signs of fungal infection detected. Suggesting treatment." },
+      { agentIdx: 3, farmerIdx: 5, cropIdx: 9, type: "UPDATE", status: "OPEN", daysOffset: 0, priority: 2, notes: "Rice crop nearing harvest. Checking grain maturity and moisture content." },
+      { agentIdx: 0, farmerIdx: 8, cropIdx: 10, type: "VISIT", status: "OPEN", daysOffset: 1, priority: 3, notes: "Visiting Girish Patil for potato crop assessment. Previous yield was excellent." },
+      { agentIdx: 1, farmerIdx: 9, cropIdx: 11, type: "UPDATE", status: "OPEN", daysOffset: 0, priority: 1, notes: "Arranging transport for Ravi Patil's maize harvest. Coordinating with local transporters." },
       
       // Pending tasks (8)
-      { agentIdx: 0, farmerIdx: 2, cropIdx: 12, type: "visit", status: "pending", daysOffset: 2, priority: 2, notes: "Scheduled visit to check tomato seedling progress at Lakshman Shetty's farm." },
-      { agentIdx: 1, farmerIdx: 4, cropIdx: 13, type: "verify_crop", status: "pending", daysOffset: 3, priority: 3, notes: "Banana plantation quality verification pending. Need to check for pests." },
-      { agentIdx: 2, farmerIdx: 6, cropIdx: 14, type: "harvest_check", status: "pending", daysOffset: 4, priority: 2, notes: "Coconut harvest assessment scheduled. Estimating yield for next quarter." },
-      { agentIdx: 3, farmerIdx: 0, cropIdx: 15, type: "transport_assist", status: "pending", daysOffset: 2, priority: 1, notes: "Need to arrange sugarcane transport to Mandya Sugar Factory." },
-      { agentIdx: 0, farmerIdx: 3, cropIdx: 16, type: "visit", status: "pending", daysOffset: 5, priority: 3, notes: "Follow-up visit for ragi crop growth monitoring." },
-      { agentIdx: 1, farmerIdx: 5, cropIdx: 17, type: "verify_crop", status: "pending", daysOffset: 4, priority: 2, notes: "Rice grain quality check before harvest recommendation." },
-      { agentIdx: 2, farmerIdx: 8, cropIdx: 18, type: "harvest_check", status: "pending", daysOffset: 3, priority: 1, notes: "Chilli harvest readiness check. Farmer reports good red coloring." },
-      { agentIdx: 3, farmerIdx: 9, cropIdx: 19, type: "transport_assist", status: "pending", daysOffset: 6, priority: 2, notes: "Coordinating transport for upcoming maize harvest." },
+      { agentIdx: 0, farmerIdx: 2, cropIdx: 12, type: "VISIT", status: "OPEN", daysOffset: 2, priority: 2, notes: "Scheduled visit to check tomato seedling progress at Lakshman Shetty's farm." },
+      { agentIdx: 1, farmerIdx: 4, cropIdx: 13, type: "VERIFY", status: "OPEN", daysOffset: 3, priority: 3, notes: "Banana plantation quality verification pending. Need to check for pests." },
+      { agentIdx: 2, farmerIdx: 6, cropIdx: 14, type: "UPDATE", status: "OPEN", daysOffset: 4, priority: 2, notes: "Coconut harvest assessment scheduled. Estimating yield for next quarter." },
+      { agentIdx: 3, farmerIdx: 0, cropIdx: 15, type: "UPDATE", status: "OPEN", daysOffset: 2, priority: 1, notes: "Need to arrange sugarcane transport to Mandya Sugar Factory." },
+      { agentIdx: 0, farmerIdx: 3, cropIdx: 16, type: "VISIT", status: "OPEN", daysOffset: 5, priority: 3, notes: "Follow-up visit for ragi crop growth monitoring." },
+      { agentIdx: 1, farmerIdx: 5, cropIdx: 17, type: "VERIFY", status: "OPEN", daysOffset: 4, priority: 2, notes: "Rice grain quality check before harvest recommendation." },
+      { agentIdx: 2, farmerIdx: 8, cropIdx: 18, type: "UPDATE", status: "OPEN", daysOffset: 3, priority: 1, notes: "Chilli harvest readiness check. Farmer reports good red coloring." },
+      { agentIdx: 3, farmerIdx: 9, cropIdx: 19, type: "UPDATE", status: "OPEN", daysOffset: 6, priority: 2, notes: "Coordinating transport for upcoming maize harvest." },
     ];
 
     for (const task of agentTaskData) {
@@ -467,8 +467,8 @@ Deno.serve(async (req) => {
         agent_id: agentIds[task.agentIdx],
         farmer_id: farmerIds[task.farmerIdx],
         crop_id: cropIds[task.cropIdx % cropIds.length],
-        task_type: task.type as "visit" | "verify_crop" | "harvest_check" | "transport_assist",
-        task_status: task.status as "pending" | "in_progress" | "completed",
+        task_type: task.type,
+        status: task.status,
         due_date: getDateOffset(task.daysOffset),
         priority: task.priority,
         notes: task.notes,

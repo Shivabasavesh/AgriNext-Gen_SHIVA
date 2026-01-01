@@ -111,8 +111,8 @@ export type Database = {
           id: string
           notes: string | null
           priority: number | null
-          task_status: Database["public"]["Enums"]["agent_task_status"]
-          task_type: Database["public"]["Enums"]["agent_task_type"]
+          status: string
+          task_type: string
           updated_at: string
         }
         Insert: {
@@ -124,8 +124,8 @@ export type Database = {
           id?: string
           notes?: string | null
           priority?: number | null
-          task_status?: Database["public"]["Enums"]["agent_task_status"]
-          task_type?: Database["public"]["Enums"]["agent_task_type"]
+          status?: string
+          task_type?: string
           updated_at?: string
         }
         Update: {
@@ -137,8 +137,8 @@ export type Database = {
           id?: string
           notes?: string | null
           priority?: number | null
-          task_status?: Database["public"]["Enums"]["agent_task_status"]
-          task_type?: Database["public"]["Enums"]["agent_task_type"]
+          status?: string
+          task_type?: string
           updated_at?: string
         }
         Relationships: [
@@ -147,6 +147,123 @@ export type Database = {
             columns: ["crop_id"]
             isOneToOne: false
             referencedRelation: "crops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_tasks_farmer_id_fkey"
+            columns: ["farmer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_tasks_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_visits: {
+        Row: {
+          agent_id: string
+          created_at: string
+          crop_id: string | null
+          farmer_id: string
+          geo_text: string | null
+          id: string
+          notes: string | null
+          photo_urls: string[] | null
+          task_id: string | null
+          visit_date: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          crop_id?: string | null
+          farmer_id: string
+          geo_text?: string | null
+          id?: string
+          notes?: string | null
+          photo_urls?: string[] | null
+          task_id?: string | null
+          visit_date?: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          crop_id?: string | null
+          farmer_id?: string
+          geo_text?: string | null
+          id?: string
+          notes?: string | null
+          photo_urls?: string[] | null
+          task_id?: string | null
+          visit_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_visits_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_visits_farmer_id_fkey"
+            columns: ["farmer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_visits_crop_id_fkey"
+            columns: ["crop_id"]
+            isOneToOne: false
+            referencedRelation: "crops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_visits_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "agent_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_logs: {
+        Row: {
+          created_at: string
+          id: string
+          input_data: Json | null
+          module_type: string
+          output_data: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          input_data?: Json | null
+          module_type: string
+          output_data?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          input_data?: Json | null
+          module_type?: string
+          output_data?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -332,6 +449,7 @@ export type Database = {
           id: string
           land_id: string | null
           quantity_unit: string | null
+          district: string | null
           sowing_date: string | null
           status: Database["public"]["Enums"]["crop_status"]
           updated_at: string
@@ -346,6 +464,7 @@ export type Database = {
           id?: string
           land_id?: string | null
           quantity_unit?: string | null
+          district?: string | null
           sowing_date?: string | null
           status?: Database["public"]["Enums"]["crop_status"]
           updated_at?: string
@@ -360,6 +479,7 @@ export type Database = {
           id?: string
           land_id?: string | null
           quantity_unit?: string | null
+          district?: string | null
           sowing_date?: string | null
           status?: Database["public"]["Enums"]["crop_status"]
           updated_at?: string
@@ -1002,12 +1122,6 @@ export type Database = {
       }
     }
     Enums: {
-      agent_task_status: "pending" | "in_progress" | "completed"
-      agent_task_type:
-        | "visit"
-        | "verify_crop"
-        | "harvest_check"
-        | "transport_assist"
       app_role: "farmer" | "buyer" | "agent" | "logistics" | "admin"
       crop_status: "growing" | "one_week" | "ready" | "harvested"
       price_trend: "up" | "down" | "flat"
@@ -1145,13 +1259,6 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      agent_task_status: ["pending", "in_progress", "completed"],
-      agent_task_type: [
-        "visit",
-        "verify_crop",
-        "harvest_check",
-        "transport_assist",
-      ],
       app_role: ["farmer", "buyer", "agent", "logistics", "admin"],
       crop_status: ["growing", "one_week", "ready", "harvested"],
       price_trend: ["up", "down", "flat"],
