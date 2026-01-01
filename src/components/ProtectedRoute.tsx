@@ -9,6 +9,7 @@ interface ProtectedRouteProps {
 
 const roleRoutes: Record<string, string> = {
   FARMER: "/farmer",
+  TRANSPORTER: "/transporter",
 };
 
 const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {

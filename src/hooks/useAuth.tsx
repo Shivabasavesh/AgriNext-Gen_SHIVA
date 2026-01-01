@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .from('profiles')
           .insert({
             id: userId,
-            role: 'FARMER',
+            role: 'TRANSPORTER',
             name: null,
             phone: null,
             district: null,
@@ -67,12 +67,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         setProfile(createdProfile ?? null);
-        setUserRole((createdProfile?.role || 'FARMER').toString().toUpperCase());
+        setUserRole((createdProfile?.role || 'TRANSPORTER').toString().toUpperCase());
         return;
       }
 
       setProfile(data);
-      setUserRole((data.role || 'FARMER').toString().toUpperCase());
+      setUserRole((data.role || 'TRANSPORTER').toString().toUpperCase());
     } catch (error) {
       console.error('Error ensuring profile:', error);
       setUserRole(null);

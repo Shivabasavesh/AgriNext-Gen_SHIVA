@@ -15,6 +15,10 @@ import NewCrop from "./pages/farmer/NewCrop";
 import FarmerTransport from "./pages/farmer/Transport";
 import NewTransport from "./pages/farmer/NewTransport";
 import AIAdvice from "./pages/farmer/AIAdvice";
+import TransporterDashboard from "./pages/transporter/Dashboard";
+import TransporterLoads from "./pages/transporter/Loads";
+import TransporterTripDetail from "./pages/transporter/TripDetail";
+import TransporterHistory from "./pages/transporter/History";
 
 const queryClient = new QueryClient();
 
@@ -87,6 +91,38 @@ const App = () => (
               }
             />
 
+            <Route
+              path="/transporter"
+              element={
+                <ProtectedRoute allowedRoles={["TRANSPORTER"]}>
+                  <TransporterDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/transporter/loads"
+              element={
+                <ProtectedRoute allowedRoles={["TRANSPORTER"]}>
+                  <TransporterLoads />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/transporter/trips/:id"
+              element={
+                <ProtectedRoute allowedRoles={["TRANSPORTER"]}>
+                  <TransporterTripDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/transporter/history"
+              element={
+                <ProtectedRoute allowedRoles={["TRANSPORTER"]}>
+                  <TransporterHistory />
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
