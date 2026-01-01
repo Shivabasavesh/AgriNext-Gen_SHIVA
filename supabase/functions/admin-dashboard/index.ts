@@ -73,17 +73,19 @@ serve(async (req) => {
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
-  const { data: roleData, error: roleError } = await serviceClient
+  const { data: adminRole, error: roleError } = await serviceClient
     .from("user_roles")
     .select("role")
     .eq("user_id", user.id)
+    .eq("role", "admin")
     .maybeSingle();
 
   if (roleError) {
     console.error("Role lookup error:", roleError);
+    return jsonResponse({ error: "Forbidden" }, 403);
   }
 
-  if (!roleData || roleData.role !== "admin") {
+  if (!adminRole) {
     return jsonResponse({ error: "Forbidden" }, 403);
   }
 
