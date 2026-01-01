@@ -1,14 +1,16 @@
 import { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
+import type { Database } from '@/integrations/supabase/types';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
   userRole: string | null;
+  profile: Database["public"]["Tables"]["profiles"]["Row"] | null;
   signOut: () => Promise<void>;
-  refreshRole: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -16,8 +18,9 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   loading: true,
   userRole: null,
+  profile: null,
   signOut: async () => {},
-  refreshRole: async () => {},
+  refreshProfile: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -25,32 +28,63 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [profile, setProfile] = useState<Database["public"]["Tables"]["profiles"]["Row"] | null>(null);
 
-  const fetchUserRole = useCallback(async (userId: string) => {
+  const ensureProfile = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching user role:', error);
+        console.error('Error fetching profile:', error);
         setUserRole(null);
+        setProfile(null);
         return;
       }
-      setUserRole(data?.role ?? null);
+
+      if (!data) {
+        const { data: createdProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            role: 'FARMER',
+            name: null,
+            phone: null,
+            district: null,
+            village: null,
+          })
+          .select()
+          .maybeSingle();
+
+        if (insertError) {
+          console.error('Error creating profile:', insertError);
+          setUserRole(null);
+          setProfile(null);
+          return;
+        }
+
+        setProfile(createdProfile ?? null);
+        setUserRole((createdProfile?.role || 'FARMER').toString().toUpperCase());
+        return;
+      }
+
+      setProfile(data);
+      setUserRole((data.role || 'FARMER').toString().toUpperCase());
     } catch (error) {
-      console.error('Error fetching user role:', error);
+      console.error('Error ensuring profile:', error);
       setUserRole(null);
+      setProfile(null);
     }
   }, []);
 
-  const refreshRole = useCallback(async () => {
+  const refreshProfile = useCallback(async () => {
     if (user?.id) {
-      await fetchUserRole(user.id);
+      await ensureProfile(user.id);
     }
-  }, [user?.id, fetchUserRole]);
+  }, [user?.id, ensureProfile]);
 
   useEffect(() => {
     let mounted = true;
@@ -66,7 +100,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          await fetchUserRole(session.user.id);
+          await ensureProfile(session.user.id);
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
@@ -88,14 +122,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Small delay to ensure role is created after signup
+          // Small delay to ensure profile is created after signup
           setTimeout(() => {
             if (mounted) {
-              fetchUserRole(session.user.id);
+              ensureProfile(session.user.id);
             }
           }, 100);
         } else {
           setUserRole(null);
+          setProfile(null);
         }
         setLoading(false);
       }
@@ -105,7 +140,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [fetchUserRole]);
+  }, [ensureProfile]);
 
   const signOut = useCallback(async () => {
     try {
@@ -113,13 +148,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(null);
       setSession(null);
       setUserRole(null);
+      setProfile(null);
     } catch (error) {
       console.error('Sign out error:', error);
     }
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, userRole, signOut, refreshRole }}>
+    <AuthContext.Provider value={{ user, session, loading, userRole, profile, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

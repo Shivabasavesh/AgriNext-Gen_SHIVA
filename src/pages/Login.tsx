@@ -10,11 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 
 const roleRoutes: Record<string, string> = {
-  farmer: "/farmer/dashboard",
-  buyer: "/marketplace/dashboard",
-  agent: "/agent/dashboard",
-  logistics: "/logistics/dashboard",
-  admin: "/admin/dashboard",
+  FARMER: "/farmer",
 };
 
 const Login = () => {
