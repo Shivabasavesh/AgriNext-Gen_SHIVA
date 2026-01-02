@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { FarmerLayout } from "@/layouts/FarmerLayout";
+import DashboardLayout from "@/layouts/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, Sprout, CheckCircle2, Truck } from "lucide-react";
@@ -36,7 +36,7 @@ const Dashboard = () => {
   });
 
   return (
-    <FarmerLayout title="Overview" actionLabel="Add Crop" actionHref="/farmer/crops/new">
+    <DashboardLayout title="Dashboard">
       {isLoading ? (
         <div className="flex items-center justify-center py-12 text-muted-foreground">
           <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -110,7 +110,7 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-    </FarmerLayout>
+    </DashboardLayout>
   );
 };
 

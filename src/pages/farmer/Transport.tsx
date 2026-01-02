@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { FarmerLayout } from "@/layouts/FarmerLayout";
+import DashboardLayout from "@/layouts/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +31,7 @@ const TransportPage = () => {
   });
 
   return (
-    <FarmerLayout title="Transport" actionLabel="New Request" actionHref="/farmer/transport/new">
+    <DashboardLayout title="Transport">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Pickup requests</CardTitle>
@@ -69,7 +69,7 @@ const TransportPage = () => {
           )}
         </CardContent>
       </Card>
-    </FarmerLayout>
+    </DashboardLayout>
   );
 };
 
