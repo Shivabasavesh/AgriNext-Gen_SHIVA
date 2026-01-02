@@ -5,7 +5,7 @@ import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { FarmerLayout } from "@/layouts/FarmerLayout";
+import DashboardLayout from "@/layouts/DashboardLayout";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -74,7 +74,7 @@ const ProfilePage = () => {
   });
 
   return (
-    <FarmerLayout title="My Profile">
+    <DashboardLayout title="My Profile">
       {isLoading ? (
         <p className="text-muted-foreground">Loading profile...</p>
       ) : (
@@ -117,7 +117,7 @@ const ProfilePage = () => {
           </Button>
         </form>
       )}
-    </FarmerLayout>
+    </DashboardLayout>
   );
 };
 

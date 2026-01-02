@@ -15,6 +15,12 @@ import NewCrop from "./pages/farmer/NewCrop";
 import FarmerTransport from "./pages/farmer/Transport";
 import NewTransport from "./pages/farmer/NewTransport";
 import AIAdvice from "./pages/farmer/AIAdvice";
+import FarmerFarmlands from "./pages/farmer/Farmlands";
+import FarmerListings from "./pages/farmer/Listings";
+import FarmerOrders from "./pages/farmer/Orders";
+import FarmerEarnings from "./pages/farmer/Earnings";
+import FarmerNotifications from "./pages/farmer/Notifications";
+import FarmerSettings from "./pages/farmer/Settings";
 import TransporterDashboard from "./pages/transporter/Dashboard";
 import TransporterLoads from "./pages/transporter/Loads";
 import TransporterTripDetail from "./pages/transporter/TripDetail";
@@ -34,8 +40,9 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
 
+            <Route path="/farmer" element={<Navigate to="/farmer/dashboard" replace />} />
             <Route
-              path="/farmer"
+              path="/farmer/dashboard"
               element={
                 <ProtectedRoute allowedRoles={["FARMER"]}>
                   <FarmerDashboard />
@@ -67,6 +74,14 @@ const App = () => (
               }
             />
             <Route
+              path="/farmer/farmlands"
+              element={
+                <ProtectedRoute allowedRoles={["FARMER"]}>
+                  <FarmerFarmlands />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/farmer/transport"
               element={
                 <ProtectedRoute allowedRoles={["FARMER"]}>
@@ -87,6 +102,46 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={["FARMER"]}>
                   <AIAdvice />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/farmer/listings"
+              element={
+                <ProtectedRoute allowedRoles={["FARMER"]}>
+                  <FarmerListings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/farmer/orders"
+              element={
+                <ProtectedRoute allowedRoles={["FARMER"]}>
+                  <FarmerOrders />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/farmer/earnings"
+              element={
+                <ProtectedRoute allowedRoles={["FARMER"]}>
+                  <FarmerEarnings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/farmer/notifications"
+              element={
+                <ProtectedRoute allowedRoles={["FARMER"]}>
+                  <FarmerNotifications />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/farmer/settings"
+              element={
+                <ProtectedRoute allowedRoles={["FARMER"]}>
+                  <FarmerSettings />
                 </ProtectedRoute>
               }
             />

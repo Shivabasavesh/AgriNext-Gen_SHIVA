@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { FarmerLayout } from "@/layouts/FarmerLayout";
+import DashboardLayout from "@/layouts/DashboardLayout";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -76,7 +76,7 @@ const NewTransportPage = () => {
   };
 
   return (
-    <FarmerLayout title="New transport request">
+    <DashboardLayout title="New Transport Request">
       <form className="grid gap-4 md:grid-cols-2" onSubmit={form.handleSubmit(onSubmit)}>
         <div className="space-y-2 md:col-span-2">
           <Label>Crop</Label>
@@ -124,7 +124,7 @@ const NewTransportPage = () => {
           <Button type="submit">Submit request</Button>
         </div>
       </form>
-    </FarmerLayout>
+    </DashboardLayout>
   );
 };
 

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
-import { FarmerLayout } from "@/layouts/FarmerLayout";
+import DashboardLayout from "@/layouts/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -128,7 +128,7 @@ const CropsPage = () => {
   );
 
   return (
-    <FarmerLayout title="Crops" actionLabel="Add Crop" actionHref="/farmer/crops/new">
+    <DashboardLayout title="My Crops">
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm text-muted-foreground">
@@ -261,7 +261,7 @@ const CropsPage = () => {
           </Card>
         )}
       </div>
-    </FarmerLayout>
+    </DashboardLayout>
   );
 };
 

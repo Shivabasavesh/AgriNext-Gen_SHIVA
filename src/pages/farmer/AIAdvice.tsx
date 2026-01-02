@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { FarmerLayout } from "@/layouts/FarmerLayout";
+import DashboardLayout from "@/layouts/DashboardLayout";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,7 +57,7 @@ const AIAdvicePage = () => {
   };
 
   return (
-    <FarmerLayout title="AI Advice">
+    <DashboardLayout title="AI Advice">
       <div className="space-y-4">
         <Card>
           <CardHeader>
@@ -100,7 +100,7 @@ const AIAdvicePage = () => {
           </Card>
         )}
       </div>
-    </FarmerLayout>
+    </DashboardLayout>
   );
 };
 
