@@ -11,6 +11,7 @@ import { useEffect } from "react";
 
 const roleRoutes: Record<string, string> = {
   FARMER: "/farmer",
+  TRANSPORTER: "/transporter",
 };
 
 const Login = () => {
