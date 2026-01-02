@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { FarmerLayout } from "@/layouts/FarmerLayout";
+import DashboardLayout from "@/layouts/DashboardLayout";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -62,7 +62,7 @@ const NewCropPage = () => {
   };
 
   return (
-    <FarmerLayout title="Add crop">
+    <DashboardLayout title="Add Crop">
       <form className="grid gap-4 md:grid-cols-2" onSubmit={form.handleSubmit(onSubmit)}>
         <div className="space-y-2">
           <Label htmlFor="crop_name">Crop name</Label>
@@ -108,7 +108,7 @@ const NewCropPage = () => {
           <Button type="submit">Save crop</Button>
         </div>
       </form>
-    </FarmerLayout>
+    </DashboardLayout>
   );
 };
 

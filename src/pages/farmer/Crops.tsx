@@ -5,13 +5,16 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { supabase } from "@/integrations/supabase/client";
-import { FarmerLayout } from "@/layouts/FarmerLayout";
+import DashboardLayout from "@/layouts/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { CalendarDays, MapPin, Sprout, Scale, Search, Truck } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import type { Database } from "@/integrations/supabase/types";
 
 type Crop = Database["public"]["Tables"]["crops"]["Row"];
@@ -31,19 +34,24 @@ const cropSchema = z.object({
 type CropForm = z.infer<typeof cropSchema>;
 
 const CropsPage = () => {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [editingCrop, setEditingCrop] = useState<Crop | null>(null);
+  const [search, setSearch] = useState("");
 
   const { data: crops, isLoading } = useQuery({
-    queryKey: ["crops"],
+    queryKey: ["crops", user?.id],
     queryFn: async () => {
+      if (!user) return [];
       const { data, error } = await supabase
         .from("crops")
         .select("*")
+        .eq("farmer_id", user.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as Crop[];
     },
+    enabled: Boolean(user),
   });
 
   const editForm = useForm<CropForm>({
@@ -81,18 +89,21 @@ const CropsPage = () => {
 
   const updateMutation = useMutation({
     mutationFn: async (payload: { id: string; values: CropForm }) => {
-      const { error } = await supabase.from("crops").update({
-        crop_name: payload.values.crop_name,
-        expected_harvest_date: payload.values.expected_harvest_date || null,
-        expected_quantity_kg: payload.values.expected_quantity_kg ?? null,
-        district: payload.values.district || null,
-        status: payload.values.status,
-      }).eq("id", payload.id);
+      const { error } = await supabase
+        .from("crops")
+        .update({
+          crop_name: payload.values.crop_name,
+          expected_harvest_date: payload.values.expected_harvest_date || null,
+          expected_quantity_kg: payload.values.expected_quantity_kg ?? null,
+          district: payload.values.district || null,
+          status: payload.values.status,
+        })
+        .eq("id", payload.id);
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Crop updated");
-      queryClient.invalidateQueries({ queryKey: ["crops"] });
+      queryClient.invalidateQueries({ queryKey: ["crops", user?.id] });
       resetForm();
     },
     onError: (err) => {
@@ -108,7 +119,7 @@ const CropsPage = () => {
     },
     onSuccess: () => {
       toast.success("Crop marked as READY");
-      queryClient.invalidateQueries({ queryKey: ["crops"] });
+      queryClient.invalidateQueries({ queryKey: ["crops", user?.id] });
     },
     onError: (err) => {
       console.error(err);
@@ -123,17 +134,28 @@ const CropsPage = () => {
   };
 
   const readyCount = useMemo(
-    () => crops?.filter((c) => c.status === "READY").length ?? 0,
+    () => crops?.filter((c) => (c.status || "").toUpperCase() === "READY").length ?? 0,
     [crops]
   );
 
+  const filteredCrops = useMemo(() => {
+    if (!crops) return [];
+    return crops.filter((crop) =>
+      crop.crop_name.toLowerCase().includes(search.toLowerCase()) ||
+      (crop.district || "").toLowerCase().includes(search.toLowerCase())
+    );
+  }, [crops, search]);
+
+  const statusStyles: Record<string, { label: string; className: string }> = {
+    GROWING: { label: "Growing", className: "bg-muted text-muted-foreground" },
+    READY: { label: "Ready", className: "bg-emerald-100 text-emerald-700" },
+    SOLD: { label: "Harvested", className: "bg-primary/10 text-primary" },
+  };
+
   return (
-    <FarmerLayout title="Crops" actionLabel="Add Crop" actionHref="/farmer/crops/new">
+    <DashboardLayout title="My Crops">
       <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm text-muted-foreground">
-            Track your crops and mark them READY when they can be picked up.
-          </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
             <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">
               Ready: {readyCount}
@@ -142,53 +164,106 @@ const CropsPage = () => {
               Total: {crops?.length ?? 0}
             </span>
           </div>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search crops or district..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10 w-64"
+              />
+            </div>
+            <Button asChild variant="default">
+              <Link to="/farmer/crops/new">
+                <Sprout className="mr-2 h-4 w-4" />
+                Add Crop
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Your crops</CardTitle>
-            <Button asChild size="sm" variant="outline">
-              <Link to="/farmer/crops/new">Add crop</Link>
-            </Button>
+            <div>
+              <CardTitle>Your crops</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Track harvest dates, quantities, and request transport when ready.
+              </p>
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <p className="text-sm text-muted-foreground">Loading crops...</p>
-            ) : crops && crops.length > 0 ? (
-              <div className="space-y-3">
-                {crops.map((crop) => (
-                  <div
-                    key={crop.id}
-                    className="flex flex-col gap-2 rounded-lg border p-3 md:flex-row md:items-center md:justify-between"
-                  >
-                    <div>
-                      <p className="font-medium">{crop.crop_name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Harvest: {crop.expected_harvest_date || "Not set"} • Qty:{" "}
-                        {crop.expected_quantity_kg ?? "Not set"} kg • District: {crop.district || "N/A"}
-                      </p>
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                        Status: {crop.status}
-                      </p>
+            ) : filteredCrops.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {filteredCrops.map((crop) => {
+                  const statusKey = (crop.status || "").toUpperCase();
+                  const status = statusStyles[statusKey] || statusStyles.GROWING;
+
+                  return (
+                    <div
+                      key={crop.id}
+                      className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-soft hover:shadow-medium transition-all"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-lg font-semibold">{crop.crop_name}</p>
+                          {crop.district && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                              <MapPin className="h-4 w-4" />
+                              <span>{crop.district}</span>
+                            </div>
+                          )}
+                        </div>
+                        <Badge className={status.className}>{status.label}</Badge>
+                      </div>
+
+                      <div className="space-y-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <CalendarDays className="h-4 w-4" />
+                          <span>
+                            Harvest: {crop.expected_harvest_date || "Not set"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Scale className="h-4 w-4" />
+                          <span>
+                            {crop.expected_quantity_kg ?? "N/A"} kg
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => resetForm(crop)}
+                          className="flex-1"
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => markReadyMutation.mutate(crop.id)}
+                          disabled={statusKey === "READY" || statusKey === "SOLD"}
+                          className="flex-1"
+                        >
+                          Mark READY
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="flex-1"
+                          onClick={() => (window.location.href = "/farmer/transport/new")}
+                        >
+                          <Truck className="h-4 w-4 mr-1" />
+                          Transport
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => resetForm(crop)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => markReadyMutation.mutate(crop.id)}
-                        disabled={crop.status === "READY" || crop.status === "SOLD"}
-                      >
-                        Mark READY
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">No crops yet. Add your first crop.</p>
@@ -261,7 +336,7 @@ const CropsPage = () => {
           </Card>
         )}
       </div>
-    </FarmerLayout>
+    </DashboardLayout>
   );
 };
 
